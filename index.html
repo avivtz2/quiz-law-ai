@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חידון: השפעת ה-AI על העולם המשפטי</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- גופן רשמי ונקי -->
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #0f172a; /* Slate 900 - רקע כהה חלק */
+            color: #f8fafc; /* Slate 50 - טקסט בהיר */
+        }
+        .hidden { display: none !important; }
+        .glass-panel {
+            background-color: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- מסך פתיחה (משתתפים) -->
+    <div id="screen-home" class="glass-panel w-full max-w-md p-8 rounded-xl shadow-2xl text-center">
+        <h1 class="text-3xl font-bold mb-2 text-blue-400">משפט ובינה מלאכותית</h1>
+        <p class="text-slate-400 mb-8">הזן את קוד הפעילות שקיבלת מהמדריך כדי להתחיל</p>
+        
+        <input type="text" id="game-code-input" placeholder="קוד פעילות (לדוגמה: 1234)" 
+            class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-center text-xl text-white focus:outline-none focus:border-blue-500 mb-4 tracking-widest">
+        
+        <button id="btn-join" class="w-full bg-blue-700 hover:bg-blue-600 transition-colors text-white font-semibold py-3 rounded-lg text-lg">
+            הצטרף לפעילות
+        </button>
+
+        <div class="mt-8 pt-4 border-t border-slate-700">
+            <button id="btn-show-login" class="text-sm text-slate-500 hover:text-blue-400 transition-colors">
+                כניסת מדריך
+            </button>
+        </div>
+    </div>
+
+    <!-- מסך התחברות מדריך -->
+    <div id="screen-login" class="hidden glass-panel w-full max-w-md p-8 rounded-xl shadow-2xl text-center">
+        <h2 class="text-2xl font-bold mb-6 text-blue-400">אזור מדריך</h2>
+        <input type="password" id="admin-password" placeholder="סיסמת מדריך" 
+            class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-center mb-4 focus:outline-none focus:border-blue-500">
+        <button id="btn-admin-login" class="w-full bg-slate-700 hover:bg-slate-600 transition-colors text-white font-semibold py-3 rounded-lg">
+            היכנס
+        </button>
+        <button id="btn-back-home1" class="mt-4 text-sm text-slate-500 hover:text-slate-300">חזור למסך הראשי</button>
+    </div>
+
+    <!-- מסך ניהול מדריך -->
+    <div id="screen-dashboard" class="hidden glass-panel w-full max-w-3xl p-8 rounded-xl shadow-2xl">
+        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+            <h2 class="text-2xl font-bold text-blue-400">לוח בקרה למדריך</h2>
+            <button id="btn-generate-code" class="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold transition-colors">
+                חולל קוד פעילות חדש
+            </button>
+        </div>
+        
+        <div class="text-center mb-8">
+            <p class="text-slate-400 mb-1">קוד הפעילות הנוכחי:</p>
+            <div id="active-code-display" class="text-5xl font-bold tracking-widest text-white">-</div>
+        </div>
+
+        <div id="stats-container" class="space-y-6">
+            <p class="text-center text-slate-500">צור קוד פעילות והמתן לתשובות המשתתפים...</p>
+        </div>
+    </div>
+
+    <!-- מסך משחק (שאלות) -->
+    <div id="screen-game" class="hidden glass-panel w-full max-w-2xl p-8 rounded-xl shadow-2xl">
+        <div class="flex justify-between text-sm text-slate-400 mb-6 font-semibold">
+            <span id="question-counter">שאלה 1 מתוך 6</span>
+        </div>
+        
+        <h2 id="question-text" class="text-2xl font-bold mb-8 text-white leading-relaxed">טוען שאלה...</h2>
+        
+        <div id="options-container" class="space-y-3">
+            <!-- כפתורי התשובות ייווצרו כאן דינמית -->
+        </div>
+
+        <div id="feedback-container" class="hidden mt-6 p-4 rounded-lg text-center font-bold">
+            <p id="feedback-text" class="text-lg mb-4"></p>
+            <button id="btn-next-question" class="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-lg text-white transition-colors">
+                לשאלה הבאה
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // הגדרות החיבור לפיירבייס שלך
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfoViGCdAJ06809mfix8dhxZU4Gv9tohU",
+            authDomain: "law-ai-quiz.firebaseapp.com",
+            databaseURL: "https://law-ai-quiz-default-rtdb.europe-west1.firebasedatabase.app/",
+            projectId: "law-ai-quiz",
+            storageBucket: "law-ai-quiz.firebasestorage.app",
+            messagingSenderId: "93931211536",
+            appId: "1:93931211536:web:d7f2d714dbf3c2b27d7395"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // מאגר השאלות - כאן תערוך את השאלות שלך
+        const questions = [
+            { q: "כאן תופיע שאלה 1", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 0 },
+            { q: "כאן תופיע שאלה 2", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 1 },
+            { q: "כאן תופיע שאלה 3", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 2 },
+            { q: "כאן תופיע שאלה 4", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 3 },
+            { q: "כאן תופיע שאלה 5", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 0 },
+            { q: "כאן תופיע שאלה 6", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 1 }
+        ];
+
+        let currentActiveCode = "";
+        let playerCurrentQuestion = 0;
+        let adminPasswordStr = "admin123"; // סיסמת מדריך - מומלץ לשנות
+
+        const screens = {
+            home: document.getElementById('screen-home'),
+            login: document.getElementById('screen-login'),
+            dashboard: document.getElementById('screen-dashboard'),
+            game: document.getElementById('screen-game')
+        };
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            screens[screenName].classList.remove('hidden');
+        }
+
+        document.getElementById('btn-show-login').addEventListener('click', () => showScreen('login'));
+        document.getElementById('btn-back-home1').addEventListener('click', () => showScreen('home'));
+
+        document.getElementById('btn-admin-login').addEventListener('click', () => {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === adminPasswordStr) {
+                showScreen('dashboard');
+            } else {
+                alert('סיסמה שגויה');
+            }
+        });
+
+        document.getElementById('btn-generate-code').addEventListener('click', async () => {
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentActiveCode = code;
+            document.getElementById('active-code-display').innerText = code;
+            
+            const gameRef = ref(db, 'games/' + code);
+            let initialData = { active: true, answers: {} };
+            questions.forEach((_, i) => {
+                initialData.answers[i] = { 0: 0, 1: 0, 2: 0, 3: 0 };
+            });
+            await set(gameRef, initialData);
+
+            onValue(gameRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.answers) {
+                    renderAdminStats(data.answers);
+                }
+            });
+        });
+
+        function renderAdminStats(answersData) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+            
+            questions.forEach((q, qIndex) => {
+                const ansData = answersData[qIndex] || {0:0, 1:0, 2:0, 3:0};
+                const totalAnswers = (ansData[0] || 0) + (ansData[1] || 0) + (ansData[2] || 0) + (ansData[3] || 0);
+                
+                let html = `<div class="bg-slate-800 p-4 rounded-lg">
+                    <h3 class="font-bold text-blue-300 mb-3">שאלה ${qIndex + 1}: ${q.q}</h3>
+                    <div class="grid grid-cols-2 gap-4">`;
+                
+                q.options.forEach((opt, optIndex) => {
+                    const count = ansData[optIndex] || 0;
+                    const percent = totalAnswers === 0 ? 0 : Math.round((count / totalAnswers) * 100);
+                    const isCorrect = q.correct === optIndex;
+                    const barColor = isCorrect ? 'bg-blue-600' : 'bg-slate-600';
+                    
+                    html += `
+                        <div class="text-sm">
+                            <div class="flex justify-between mb-1">
+                                <span class="truncate pr-2">${opt}</span>
+                                <span class="font-bold">${count} (${percent}%)</span>
+                            </div>
+                            <div class="w-full bg-slate-900 rounded-full h-2">
+                                <div class="${barColor} h-2 rounded-full" style="width: ${percent}%"></div>
+                            </div>
+                        </div>`;
+                });
+                
+                html += `</div></div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        document.getElementById('btn-join').addEventListener('click', async () => {
+            const code = document.getElementById('game-code-input').value;
+            if(!code) return;
+
+            const gameRef = ref(db, 'games/' + code);
+            const snapshot = await get(gameRef);
+            
+            if (snapshot.exists()) {
+                currentActiveCode = code;
+                playerCurrentQuestion = 0;
+                renderQuestion();
+                showScreen('game');
+            } else {
+                alert('קוד פעילות לא נמצא. ודא שהמדריך חולל קוד.');
+            }
+        });
+
+        function renderQuestion() {
+            if (playerCurrentQuestion >= questions.length) {
+                document.getElementById('question-counter').innerText = "סיימנו!";
+                document.getElementById('question-text').innerText = "תודה על ההשתתפות. המתן להנחיות מהמדריך.";
+                document.getElementById('options-container').innerHTML = '';
+                document.getElementById('feedback-container').classList.add('hidden');
+                return;
+            }
+
+            const q = questions[playerCurrentQuestion];
+            document.getElementById('question-counter').innerText = `שאלה ${playerCurrentQuestion + 1} מתוך ${questions.length}`;
+            document.getElementById('question-text').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            document.getElementById('feedback-container').classList.add('hidden');
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-right bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-lg transition-colors text-lg";
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        async function handleAnswer(selectedIndex, btnElement) {
+            const buttons = document.getElementById('options-container').querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            const q = questions[playerCurrentQuestion];
+            const isCorrect = selectedIndex === q.correct;
+            
+            if(isCorrect) {
+                btnElement.classList.replace('bg-slate-800', 'bg-blue-800');
+                btnElement.classList.replace('border-slate-700', 'border-blue-500');
+            } else {
+                btnElement.classList.replace('bg-slate-800', 'bg-slate-700');
+                btnElement.style.opacity = '0.5';
+            }
+
+            const updates = {};
+            updates[`games/${currentActiveCode}/answers/${playerCurrentQuestion}/${selectedIndex}`] = increment(1);
+            await update(ref(db), updates);
+
+            const feedbackContainer = document.getElementById('feedback-container');
+            const feedbackText = document.getElementById('feedback-text');
+            feedbackContainer.classList.remove('hidden');
+            
+            if(isCorrect) {
+                feedbackContainer.className = "mt-6 p-4 rounded-lg text-center font-bold bg-blue-900/50 border border-blue-500/50 text-blue-200";
+                feedbackText.innerText = "תשובה נכונה!";
+            } else {
+                feedbackContainer.className = "mt-6 p-4 rounded-lg text-center font-bold bg-slate-800 border border-slate-600 text-slate-300";
+                feedbackText.innerText = "לא מדויק... התשובה הנכונה היא: " + q.options[q.correct];
+            }
+        }
+
+        document.getElementById('btn-next-question').addEventListener('click', () => {
+            playerCurrentQuestion++;
+            renderQuestion();
+        });
+    </script>
+</body>
+</html>
