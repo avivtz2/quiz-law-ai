@@ -113,7 +113,7 @@
             <!-- תצוגת התפלגות (שאלה בודדת) -->
             <div id="admin-view-stats">
                 <div class="text-center mb-6">
-                    <span id="admin-q-counter" class="text-slate-400 text-lg font-semibold mb-2 block">שאלה 1 מתוך 6</span>
+                    <span id="admin-q-counter" class="text-slate-400 text-lg font-semibold mb-2 block">שאלה 1 מתוך 5</span>
                     <h3 id="admin-q-text" class="text-3xl font-bold text-white leading-relaxed">טוען שאלה...</h3>
                 </div>
                 
@@ -152,7 +152,7 @@
     <div id="screen-game" class="hidden glass-panel w-full max-w-2xl p-8 rounded-xl shadow-2xl">
         <div class="flex justify-between items-center text-sm text-slate-400 mb-6 font-semibold border-b border-slate-700 pb-4">
             <span id="player-name-display" class="text-blue-300 text-lg"><i class="fa-solid fa-user ml-1"></i> </span>
-            <span id="question-counter" class="text-lg">שאלה 1 מתוך 6</span>
+            <span id="question-counter" class="text-lg">שאלה 1 מתוך 5</span>
             <span id="player-score-display" class="text-white bg-slate-800 border border-slate-600 px-4 py-1 rounded-full text-lg"><i class="fa-solid fa-star text-yellow-500 ml-1"></i> 0 נק'</span>
         </div>
         
@@ -191,12 +191,56 @@
 
         // מאגר השאלות
         const questions = [
-            { q: "כאן תופיע שאלה 1", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 0 },
-            { q: "כאן תופיע שאלה 2", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 1 },
-            { q: "כאן תופיע שאלה 3", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 2 },
-            { q: "כאן תופיע שאלה 4", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 3 },
-            { q: "כאן תופיע שאלה 5", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 0 },
-            { q: "כאן תופיע שאלה 6", options: ["מקום לתשובה א", "מקום לתשובה ב", "מקום לתשובה ג", "מקום לתשובה ד"], correct: 1 }
+            { 
+                q: 'מדוע עדיף לבקש מהצ\'ט קודם נימוקים לשני הצדדים ורק אז את דעתו?', 
+                options: [
+                    'הצ\'ט "חושב" רק בזמן שהוא כותב.', 
+                    'אחרת הצ\'ט יסרב לענות בשל הגבלות אתיות.', 
+                    'הצ\'ט מעדיף להציג מידע מנומק בתחילת התשובה.', 
+                    'הצ\'ט מתוכנת לתת חוות דעת רק לאחר כתיבת נימוקים.'
+                ], 
+                correct: 0 
+            },
+            { 
+                q: 'מה יקרה בסבירות הגבוהה ביותר אם תכתוב לצ\'אט: "הצג לי נימוקים לכך שבית המשפט חרג מסמכותו במקרה זה"?', 
+                options: [
+                    'הצ\'ט יסרב לענות כי אסור לו לכתוב נימוקים.', 
+                    'הצ\'ט יציג את הנימוקים המבוקשים.', 
+                    'הצ\'ט יכתוב נימוקים הפוכים כדי לוודא שהמשתמש נוהג באחריות.', 
+                    'הצ\'ט יציג טיעונים שקריים (הזיות), כיוון שאין לו יכולת תכנון פעולות.'
+                ], 
+                correct: 1 
+            },
+            { 
+                q: 'מדוע הפתרון להטיות של בינה מלאכותית איננו פשוט להתעלם מנתונים של גזע או מין?', 
+                options: [
+                    'התעלמות מנתונים אלו פוגעת ביכולת של המערכת לייצר תשובה.', 
+                    'חוקי השקיפות דורשים שימוש גלוי וברור בנתוני גזע ומין.', 
+                    'המודל יודע לזהות מאפיינים עוקפים ולהמשיך לייצר הטיות דרכם.', 
+                    'הסרתם תהפוך את המערכת לאקראית לחלוטין.'
+                ], 
+                correct: 2 
+            },
+            { 
+                q: 'מהו תפקידו של השופט כאשר נעשה שימוש במערכת בינה מלאכותית?', 
+                options: [
+                    'השופט נדרש לאשרר את החלטת המערכת באופן פורמלי.', 
+                    'השופט נותר הגורם בעל שיקול הדעת והאחריות המלאה.', 
+                    'השופט מחויב לבדוק ידנית מדגם של 10% מהתוצרים.', 
+                    'השופט חייב לקבל את הסכמת הצדדים לפני שימוש במערכת.'
+                ], 
+                correct: 1 
+            },
+            { 
+                q: 'כיצד בא לידי ביטוי האתגר המשפטי של "חובת ההנמקה" כאשר משתמשים בבינה מלאכותית?', 
+                options: [
+                    'הנמקות הן בעלות סגנון ניסוח אחיד, מה שמונע להתחקות אחר הלך הרוח הספציפי והעצמאי של השופט.', 
+                    'המודל שואב מידע מתיקים חסויים, והשופט אינו יכול לפרט את מלוא השיקולים מחשש לפגיעה בחיסיון.', 
+                    'המערכת מבוססת על אלגוריתם של "קופסה שחורה" שלא ניתן להתחקות במדויק אחר האופן שבו שקלל את הנתונים.', 
+                    'מערכות בינה מלאכותית מאומנות לסנן "רעשי רקע" ולהתייחס רק לעובדות המהותיות, מה שיוצר פסק דין חלקי.'
+                ], 
+                correct: 2 
+            }
         ];
 
         let currentActiveCode = "";
@@ -230,7 +274,6 @@
             const pass = document.getElementById('admin-password').value;
             if (pass === adminPasswordStr) {
                 showScreen('dashboard');
-                // אתחול מצב המדריך למסך הפתיחה המרכזי
                 document.getElementById('admin-pre-game').classList.remove('hidden');
                 document.getElementById('admin-in-game').classList.add('hidden');
             } else {
@@ -243,7 +286,6 @@
             currentActiveCode = code;
             adminCurrentQIndex = 0;
             
-            // מעבר למסך המקרן הפעיל
             document.getElementById('admin-pre-game').classList.add('hidden');
             document.getElementById('admin-in-game').classList.remove('hidden');
             document.getElementById('active-code-display').innerText = code;
@@ -324,8 +366,8 @@
                 container.innerHTML += `
                     <div class="bg-slate-800 p-4 rounded-lg border ${isCorrect ? 'border-blue-500/50' : 'border-slate-700'}">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="text-xl ${textColor}">${opt} ${iconCorrect}</span>
-                            <span class="font-bold text-lg text-white">${count} קולות (${percent}%)</span>
+                            <span class="text-lg ${textColor}">${opt} ${iconCorrect}</span>
+                            <span class="font-bold text-lg text-white whitespace-nowrap mr-4">${count} קולות (${percent}%)</span>
                         </div>
                         <div class="w-full bg-slate-900 rounded-full h-5">
                             <div class="${barColor} h-5 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
@@ -454,8 +496,8 @@
 
             q.options.forEach((opt, index) => {
                 const btn = document.createElement('button');
-                btn.className = "w-full flex items-center bg-slate-800 hover:bg-slate-700 border border-slate-700 p-5 rounded-xl transition-all transform hover:scale-[1.02] text-xl text-white";
-                btn.innerHTML = `<span class="bg-slate-700 text-slate-300 w-8 h-8 flex items-center justify-center rounded-md font-bold ml-4 border border-slate-600">${letters[index]}</span> <span class="flex-1 text-right">${opt}</span>`;
+                btn.className = "w-full flex items-center bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-xl transition-all transform hover:scale-[1.02] text-lg text-white";
+                btn.innerHTML = `<span class="bg-slate-700 text-slate-300 w-8 h-8 flex items-center justify-center shrink-0 rounded-md font-bold ml-4 border border-slate-600">${letters[index]}</span> <span class="flex-1 text-right">${opt}</span>`;
                 btn.onclick = () => handleAnswer(index, btn);
                 optionsContainer.appendChild(btn);
             });
