@@ -75,8 +75,13 @@
     </div>
 
     <!-- מסך ניהול מדריך (מקרן) -->
-    <div id="screen-dashboard" class="hidden glass-panel w-full max-w-4xl p-8 rounded-xl shadow-2xl">
+    <div id="screen-dashboard" class="hidden glass-panel w-full max-w-4xl p-8 rounded-xl shadow-2xl relative">
         
+        <!-- כפתור משחק חדש (יופיע רק בזמן משחק) -->
+        <button id="btn-new-game-top" class="hidden absolute top-6 left-6 bg-slate-800 hover:bg-slate-700 border border-slate-600 px-4 py-2 rounded-lg text-sm transition-colors text-slate-300 font-semibold shadow-lg z-10">
+            <i class="fa-solid fa-plus ml-1"></i> משחק חדש
+        </button>
+
         <!-- מצב "לפני משחק" - מסך התחלתי גדול -->
         <div id="admin-pre-game" class="w-full text-center py-16">
             <div class="flex justify-center gap-6 text-6xl text-slate-600 mb-8">
@@ -102,16 +107,16 @@
 
             <!-- טאבים לניווט -->
             <div class="flex justify-center gap-4 mb-8 border-b border-slate-700 pb-8">
-                <button id="btn-tab-stats" class="bg-blue-700 hover:bg-blue-600 px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-lg">
+                <button id="btn-tab-stats" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-lg text-white">
                     <i class="fa-solid fa-chart-column ml-2"></i> התפלגות תשובות
                 </button>
-                <button id="btn-tab-leaderboard" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-lg">
+                <button id="btn-tab-leaderboard" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-lg text-white">
                     <i class="fa-solid fa-trophy ml-2 text-yellow-500"></i> לוח תוצאות
                 </button>
             </div>
 
-            <!-- תצוגת התפלגות (שאלה בודדת) -->
-            <div id="admin-view-stats">
+            <!-- תצוגת התפלגות (שאלה בודדת) - מוסתר כברירת מחדל -->
+            <div id="admin-view-stats" class="hidden">
                 <div class="text-center mb-6">
                     <span id="admin-q-counter" class="text-slate-400 text-lg font-semibold mb-2 block">שאלה 1 מתוך 5</span>
                     <h3 id="admin-q-text" class="text-3xl font-bold text-white leading-relaxed">טוען שאלה...</h3>
@@ -121,13 +126,13 @@
                     <!-- עמודות ייווצרו דינמית -->
                 </div>
 
-                <div class="flex justify-center gap-4 mt-8 pt-6">
+                <div class="flex justify-center gap-4 mt-8 pt-6 border-t border-slate-700">
                     <button id="btn-admin-prev" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-lg transition-colors font-semibold text-lg"><i class="fa-solid fa-chevron-right ml-2"></i> לשאלה הקודמת</button>
                     <button id="btn-admin-next" class="bg-blue-700 hover:bg-blue-600 px-6 py-3 rounded-lg transition-colors font-semibold shadow-lg shadow-blue-900/20 text-lg">לשאלה הבאה <i class="fa-solid fa-chevron-left mr-2"></i></button>
                 </div>
             </div>
 
-            <!-- תצוגת לוח תוצאות (פודיום) -->
+            <!-- תצוגת לוח תוצאות (פודיום) - מוסתר כברירת מחדל -->
             <div id="admin-view-leaderboard" class="hidden">
                 <h3 class="text-3xl font-bold text-center text-white mb-8"><i class="fa-solid fa-medal ml-2 text-yellow-500"></i> המובילים</h3>
                 
@@ -189,7 +194,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // מאגר השאלות
         const questions = [
             { 
                 q: 'מדוע עדיף לבקש מהצ\'ט קודם נימוקים לשני הצדדים ורק אז את דעתו?', 
@@ -276,25 +280,40 @@
                 showScreen('dashboard');
                 document.getElementById('admin-pre-game').classList.remove('hidden');
                 document.getElementById('admin-in-game').classList.add('hidden');
+                document.getElementById('btn-new-game-top').classList.add('hidden');
             } else {
                 alert('סיסמה שגויה');
             }
         });
 
-        document.getElementById('btn-generate-code').addEventListener('click', async () => {
+        async function startNewGame() {
+            // אם כבר יש משחק באוויר, בקש אישור
+            if(currentActiveCode) {
+                if(!confirm("האם אתה בטוח שברצונך להתחיל משחק חדש? הנתונים הנוכחיים יאופסו ולא ניתן יהיה לשחזרם.")) {
+                    return;
+                }
+            }
+
             const code = Math.floor(1000 + Math.random() * 9000).toString();
             currentActiveCode = code;
             adminCurrentQIndex = 0;
             
+            // תצוגת המסך הראשי של המקרן
             document.getElementById('admin-pre-game').classList.add('hidden');
             document.getElementById('admin-in-game').classList.remove('hidden');
+            document.getElementById('btn-new-game-top').classList.remove('hidden');
             document.getElementById('active-code-display').innerText = code;
             
+            // הסתרת התוכן למטה (הסטטיסטיקות והלוח) ואיפוס הטאבים למצב אפור כברירת מחדל
+            resetAdminTabs();
+
+            // יצירת משחק חדש ב-DB
             const gameRef = ref(db, 'games/' + code);
             let initialData = { active: true, answers: {}, players: {} };
             questions.forEach((_, i) => { initialData.answers[i] = { 0: 0, 1: 0, 2: 0, 3: 0 }; });
             await set(gameRef, initialData);
 
+            // האזנה לנתונים
             onValue(gameRef, (snapshot) => {
                 currentGameData = snapshot.val();
                 if (currentGameData) {
@@ -302,9 +321,25 @@
                     renderAdminLeaderboard();
                 }
             });
+        }
+
+        // כפתור המשחק החדש המרכזי וכפתור הצד העליון מפנים לאותה פונקציה
+        document.getElementById('btn-generate-code').addEventListener('click', startNewGame);
+        document.getElementById('btn-new-game-top').addEventListener('click', startNewGame);
+
+        function resetAdminTabs() {
+            document.getElementById('admin-view-stats').classList.add('hidden');
+            document.getElementById('admin-view-leaderboard').classList.add('hidden');
             
-            switchAdminTab('stats');
-        });
+            const btnStats = document.getElementById('btn-tab-stats');
+            const btnBoard = document.getElementById('btn-tab-leaderboard');
+            
+            btnStats.classList.remove('bg-blue-700', 'hover:bg-blue-600');
+            btnStats.classList.add('bg-slate-700', 'hover:bg-slate-600');
+            
+            btnBoard.classList.remove('bg-blue-700', 'hover:bg-blue-600');
+            btnBoard.classList.add('bg-slate-700', 'hover:bg-slate-600');
+        }
 
         document.getElementById('btn-tab-stats').addEventListener('click', () => switchAdminTab('stats'));
         document.getElementById('btn-tab-leaderboard').addEventListener('click', () => switchAdminTab('leaderboard'));
@@ -315,16 +350,16 @@
             const btnStats = document.getElementById('btn-tab-stats');
             const btnBoard = document.getElementById('btn-tab-leaderboard');
 
+            resetAdminTabs();
+
             if(tab === 'stats') {
                 statsView.classList.remove('hidden');
-                boardView.classList.add('hidden');
-                btnStats.classList.replace('bg-slate-700', 'bg-blue-700');
-                btnBoard.classList.replace('bg-blue-700', 'bg-slate-700');
+                btnStats.classList.remove('bg-slate-700', 'hover:bg-slate-600');
+                btnStats.classList.add('bg-blue-700', 'hover:bg-blue-600');
             } else {
-                statsView.classList.add('hidden');
                 boardView.classList.remove('hidden');
-                btnBoard.classList.replace('bg-slate-700', 'bg-blue-700');
-                btnStats.classList.replace('bg-blue-700', 'bg-slate-700');
+                btnBoard.classList.remove('bg-slate-700', 'hover:bg-slate-600');
+                btnBoard.classList.add('bg-blue-700', 'hover:bg-blue-600');
             }
         }
 
@@ -435,9 +470,9 @@
             const list = document.getElementById('all-players-list');
             list.classList.toggle('hidden');
             if(list.classList.contains('hidden')) {
-                e.innerHTML = '<i class="fa-solid fa-users ml-2"></i> הצג את כל המשתתפים ⯆';
+                e.target.innerHTML = '<i class="fa-solid fa-users ml-2"></i> הצג את כל המשתתפים ⯆';
             } else {
-                e.innerHTML = '<i class="fa-solid fa-users ml-2"></i> הסתר רשימה ⯅';
+                e.target.innerHTML = '<i class="fa-solid fa-users ml-2"></i> הסתר רשימה ⯅';
             }
         });
 
